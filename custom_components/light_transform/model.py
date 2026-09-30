@@ -36,6 +36,12 @@ class Output:
         )
 
     @property
+    def temperature_range(self) -> tuple[int, int]:
+        if self.kind == "cct":
+            return self.min_kelvin, self.max_kelvin
+        return self.fixed_kelvin, self.fixed_kelvin
+
+    @property
     def owned_channels(self) -> set[str]:
         return {self.warm_channel, self.cold_channel} if self.kind == "cct" else set(self.channels)
 
@@ -57,9 +63,10 @@ def validate_outputs(outputs: list[Output], transport: str) -> None:
         if output.kind not in {"dimmer", "cct"}:
             raise ValueError("invalid_kind")
         if transport == "cct":
-            if output.kind != "dimmer":
-                raise ValueError("invalid_kind")
-            if not 1000 <= output.fixed_kelvin <= 40000:
+            minimum, maximum = output.temperature_range
+            if not 1000 <= minimum <= maximum <= 40000 or (
+                output.kind == "cct" and minimum == maximum
+            ):
                 raise ValueError("invalid_temperature")
             continue
         channels = output.owned_channels

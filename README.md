@@ -13,7 +13,7 @@ ordinary CCT or brightness-only light entities. Inspired by Light Masks' virtual
 light approach, but responsible for **capability and channel conversion**, not
 automation priorities.
 
-**Version:** 0.1.0. **Minimum Home Assistant:** 2026.9.3.
+**Version:** 0.2.0. **Minimum Home Assistant:** 2026.9.3.
 **Configuration:** native UI flows and output subentries. No YAML or custom actions.
 
 ## Supported mappings
@@ -25,6 +25,7 @@ automation priorities.
 | RGB, HS or XY | Up to three independent dimmers | One output subentry per channel |
 | RGB, HS or XY | CCT plus one independent dimmer | Two channels for CCT; remaining channel for dimmer |
 | Native CCT | One dimmer | Fixed source color temperature |
+| Native CCT, including RGB+CCT controllers | One CCT-only light | Pass through brightness and temperature; hide RGB and effects |
 
 Channels cannot overlap. One integration entry exclusively owns one physical
 source. Native CCT transport uses the source's brightness and color-temperature
@@ -80,7 +81,9 @@ three-dot menu > **Update information**, then check again.
    native config subentry with its own device and stable light entity.
 4. Choose **Dimmer** (`dimmer`) or **Tunable white** (`cct`). Dimmer uses only **Dimmer channels**; CCT uses only
    **Warm channel**, **Cold channel**, the Kelvin endpoints and mixing rule.
-   With `cct` transport, only the name and fixed source temperature are needed.
+   With `cct` transport, choose **Dimmer** for fixed temperature or **Tunable white**
+   for adjustable native CCT. Native tunable white ignores fixed temperature and
+   uses the source's advertised Kelvin range; no RGB channels or mixing are involved.
 5. Use the generated entity in dashboards, automations, scenes and light groups.
    Edit or delete individual outputs using their subentry menu.
 
@@ -127,6 +130,7 @@ you choose and on existing entries in your entity registry.
 | RGB controller + CCT strip | `light.rgb_controller`, `rgb` | CCT; warm **red**, cold **green**; 2700-6500 K; `constant_sum` | On/Off, brightness, temperature |
 | RGB controller + single-color strip | `light.rgb_controller`, `rgb` | Dimmer; **red** | On/Off, brightness |
 | CCT controller + fixed-white load | `light.cct_controller`, `cct` | Dimmer; fixed **3000 K**, inside the source's supported range | On/Off, brightness; 3000 K sent on every On |
+| RGB+CCT controller + strip on native CCT terminals | `light.rgb_cct_controller`, `cct` | Tunable white; source temperature range | On/Off, brightness, temperature; no RGB picker or effects |
 | RGB controller + three single-color strips | One `light.rgb_controller`, `rgb` | Three output subentries: **red**, **green**, **blue**, one channel each | Three independent dimmers |
 | RGB controller + CCT and single-color strips | One `light.rgb_controller`, `rgb` | CCT on **red + green**, dimmer on **blue** | Independent CCT light and dimmer |
 | RGB controller + synchronized single-color loads | `light.rgb_controller`, `rgb` | One dimmer selecting **red + green** | One slider drives both channels equally |
@@ -138,6 +142,9 @@ within the controller, wiring and power-supply ratings.
 
 Do not use the source's advertised CCT range as evidence of the connected strip's
 range. A controller's advertised capabilities describe its firmware, not its load.
+Native CCT passthrough preserves the controller's existing temperature scale; it
+does not calibrate the connected strip or remap RGB terminals. Existing native-CCT
+dimmers retain their fixed-temperature behavior when upgrading from 0.1.0.
 
 ### RGB to tunable white
 

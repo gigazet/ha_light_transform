@@ -143,6 +143,86 @@ async def test_fixed_cct_applied_on_every_on(hass, source, setup_transform):
     assert source.calls[-1][1] == {"brightness": 120, "color_temp_kelvin": 2000}
 
 
+async def test_native_cct_passthrough_memory_and_feedback(hass, source, setup_transform):
+    entry = await setup_transform([{"kind": "cct", "max_kelvin": 6500}], transport="cct")
+    light = next(iter(entity_ids(hass, entry).values()))
+    state = hass.states.get(light)
+    assert state.attributes["supported_color_modes"] == ["color_temp"]
+    assert state.attributes["channels"] == []
+    assert not state.attributes["approximate_channel_control"]
+    assert state.attributes["supported_features"] == 32
+    assert "effect_list" not in state.attributes
+    assert not source.calls
+    await command(hass, light, brightness=130, color_temp_kelvin=3500, transition=1)
+    assert source.calls[-1][1] == {"brightness": 130, "color_temp_kelvin": 3500, "transition": 1}
+    assert hass.states.get(light).attributes["color_temp_kelvin"] == 3500
+    assert hass.states.get(light).attributes["delivery_status"] == "in_sync"
+    await command(hass, source.entity_id, brightness=100, color_temp_kelvin=5000)
+    assert hass.states.get(light).attributes["color_temp_kelvin"] == 5000
+    await command(hass, light, "turn_off", transition=2)
+    assert source.calls[-1] == ("off", {"transition": 2})
+    before = len(source.calls)
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert len(source.calls) == before
+    assert hass.states.get(light).state == "off"
+    await command(hass, light)
+    assert source.calls[-1][1] == {"brightness": 100, "color_temp_kelvin": 5000}
+    source.report = False
+    await command(hass, light, color_temp_kelvin=3000)
+    assert entry.runtime_data.pending
+    assert hass.states.get(light).attributes["color_temp_kelvin"] == 3000
+    entry.runtime_data._timeout(None)
+    assert hass.states.get(light).attributes["color_temp_kelvin"] == 5000
+    assert hass.states.get(light).attributes["delivery_status"] == "feedback_mismatch"
+
+
+async def test_native_cct_startup_bounds_and_incompatible_feedback(hass, source, setup_transform):
+    await command(hass, source.entity_id, brightness=90, color_temp_kelvin=3200)
+    before = len(source.calls)
+    entry = await setup_transform([{"kind": "cct"}], transport="cct")
+    light = next(iter(entity_ids(hass, entry).values()))
+    assert len(source.calls) == before
+    assert hass.states.get(light).attributes["color_temp_kelvin"] == 3200
+    await command(hass, light, color_temp_kelvin=1000)
+    assert source.calls[-1][1]["color_temp_kelvin"] == 2000
+    await command(hass, light, color_temp_kelvin=10000)
+    assert source.calls[-1][1]["color_temp_kelvin"] == 6500
+    await command(hass, source.entity_id, rgb_color=(255, 0, 0))
+    assert hass.states.get(light).state == "unavailable"
+    await command(hass, source.entity_id, "turn_off")
+    assert hass.states.get(light).state == "off"
+    await command(hass, light)
+    assert source.calls[-1][1]["color_temp_kelvin"] == 6500
+    source._attr_color_temp_kelvin = None
+    source.async_write_ha_state()
+    await hass.async_block_till_done()
+    assert hass.states.get(light).state == "unavailable"
+    source._attr_is_on = False
+    source._attr_max_color_temp_kelvin = 6000
+    source.async_write_ha_state()
+    await hass.async_block_till_done()
+    assert hass.states.get(light).state == "unavailable"
+
+
+@pytest.mark.parametrize("kelvin", [3000, 3500, 6300])
+async def test_native_cct_quantized_feedback(hass, source, setup_transform, kelvin):
+    entry = await setup_transform([{"kind": "cct"}], transport="cct")
+    light = next(iter(entity_ids(hass, entry).values()))
+    source.report = False
+    await command(hass, light, brightness=100, color_temp_kelvin=kelvin)
+    assert entry.runtime_data.pending
+    source._attr_is_on = True
+    source._attr_color_mode = ColorMode.COLOR_TEMP
+    source._attr_brightness = 100
+    source._attr_color_temp_kelvin = round(1_000_000 / round(1_000_000 / kelvin))
+    source.async_write_ha_state()
+    await hass.async_block_till_done()
+    assert not entry.runtime_data.pending
+    assert hass.states.get(light).attributes["delivery_status"] == "in_sync"
+    assert hass.states.get(light).attributes["color_temp_kelvin"] == source.color_temp_kelvin
+
+
 @pytest.mark.parametrize("mode", [ColorMode.XY, ColorMode.HS])
 async def test_color_conversion_sources(hass, source, setup_transform, mode):
     source._attr_supported_color_modes = {mode, ColorMode.COLOR_TEMP}

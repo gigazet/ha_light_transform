@@ -40,6 +40,9 @@ def output_schema(transport: str, values: Mapping[str, Any]) -> vol.Schema:
         ),
     }
     if transport == "cct":
+        fields[vol.Required("kind", default=values.get("kind", "dimmer"))] = select(
+            ["dimmer", "cct"], "kind"
+        )
         fields[vol.Required("fixed_kelvin", default=values.get("fixed_kelvin", 2000))] = vol.All(
             vol.Coerce(int), vol.Range(min=1000, max=40000)
         )
@@ -135,7 +138,7 @@ class OutputSubentryFlow(ConfigSubentryFlow):
         if user_input is not None:
             data = dict(user_input)
             if entry.data["transport"] == "cct":
-                data["kind"] = "dimmer"
+                data.setdefault("kind", "dimmer")
             try:
                 state = validate_source(
                     self.hass,
@@ -143,6 +146,11 @@ class OutputSubentryFlow(ConfigSubentryFlow):
                     entry.data["transport"],
                     entry.entry_id,
                 )
+                if entry.data["transport"] == "cct" and data["kind"] == "cct":
+                    data["min_kelvin"] = state.attributes.get("min_color_temp_kelvin")
+                    data["max_kelvin"] = state.attributes.get("max_color_temp_kelvin")
+                    if data["min_kelvin"] is None or data["max_kelvin"] is None:
+                        raise ValueError("unsupported_source")
                 outputs = [
                     Output.from_data(sub.subentry_id, sub.title, sub.data)
                     for sub in entry.subentries.values()

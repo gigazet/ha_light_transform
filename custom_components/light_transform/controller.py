@@ -118,12 +118,19 @@ class Controller:
             "color_temp" in modes
             and minimum is not None
             and maximum is not None
-            and all(minimum <= output.fixed_kelvin <= maximum for output in self.outputs.values())
+            and all(
+                minimum <= output.temperature_range[0] <= output.temperature_range[1] <= maximum
+                for output in self.outputs.values()
+            )
             and (
                 self.state.state == "off"
                 or (
                     self.state.attributes.get("color_mode") == "color_temp"
                     and self.state.attributes.get("brightness") is not None
+                    and (
+                        not any(output.kind == "cct" for output in self.outputs.values())
+                        or isinstance(self.state.attributes.get("color_temp_kelvin"), (int, float))
+                    )
                 )
             )
         )
@@ -176,9 +183,21 @@ class Controller:
         else:
             on = self.state.state == "on"
             for id, level in self.levels.items():
+                output = self.outputs[id]
                 brightness = self.state.attributes.get("brightness") if on else None
+                kelvin = (
+                    max(
+                        output.min_kelvin,
+                        min(output.max_kelvin, self.state.attributes["color_temp_kelvin"]),
+                    )
+                    if on and output.kind == "cct"
+                    else level.kelvin
+                )
                 self.levels[id] = replace(
-                    level, on=on and bool(brightness), brightness=brightness or level.brightness
+                    level,
+                    on=on and bool(brightness),
+                    brightness=brightness or level.brightness,
+                    kelvin=round(kelvin),
                 )
 
     def _matches(self) -> bool:
@@ -195,11 +214,20 @@ class Controller:
             level = self.levels[id]
             if (self.state.state == "on") != level.on:
                 return False
-            if level.on and (
-                abs(self.state.attributes["brightness"] - level.brightness) > 1
-                or abs(self.state.attributes.get("color_temp_kelvin", 0) - output.fixed_kelvin) > 2
-            ):
-                return False
+            if level.on:
+                observed_kelvin = self.state.attributes.get("color_temp_kelvin") or 0
+                target = level.kelvin if output.kind == "cct" else output.fixed_kelvin
+                temperature_matches = abs(observed_kelvin - target) <= 2
+                if output.kind == "cct" and observed_kelvin > 0:
+                    # Zigbee controllers often quantize Kelvin requests to whole mireds.
+                    temperature_matches |= (
+                        abs(1_000_000 / observed_kelvin - 1_000_000 / target) <= 1
+                    )
+                if (
+                    abs(self.state.attributes["brightness"] - level.brightness) > 1
+                    or not temperature_matches
+                ):
+                    return False
         return True
 
     @callback
@@ -284,7 +312,10 @@ class Controller:
                 service = "turn_on" if requested.on else "turn_off"
                 if requested.on:
                     call.update(
-                        brightness=requested.brightness, color_temp_kelvin=output.fixed_kelvin
+                        brightness=requested.brightness,
+                        color_temp_kelvin=(
+                            requested.kelvin if output.kind == "cct" else output.fixed_kelvin
+                        ),
                     )
             if "transition" in data:
                 call["transition"] = data["transition"]

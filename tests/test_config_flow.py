@@ -139,6 +139,39 @@ async def test_source_rename_and_registry_deletion(hass, source):
     await hass.config_entries.async_unload(entry.entry_id)
 
 
+async def test_native_cct_create_and_reconfigure_preserve_identity(hass, source):
+    source._attr_max_color_temp_kelvin = 6329
+    source.async_write_ha_state()
+    entry = await create_controller(hass, source, "cct")
+    result = await add_output(hass, entry, {"name": "White strip", "kind": "cct"})
+    assert result["type"] == "create_entry", result
+    await hass.async_block_till_done()
+    sub = next(iter(entry.subentries.values()))
+    assert sub.data["min_kelvin"] == 2000
+    assert sub.data["max_kelvin"] == 6329
+    light = entity_ids(hass, entry)["White strip"]
+    assert hass.states.get(light).attributes["supported_color_modes"] == ["color_temp"]
+    assert hass.states.get(light).attributes["max_color_temp_kelvin"] == 6329
+    assert not source.calls
+    result = await add_output(hass, entry, {"name": "Duplicate", "kind": "cct"})
+    assert result["errors"] == {"base": "overlapping_channels"}
+    flow = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, "output"),
+        context={"source": "reconfigure", "subentry_id": sub.subentry_id},
+    )
+    result = await hass.config_entries.subentries.async_configure(
+        flow["flow_id"], {"name": "Fixed white", "kind": "dimmer", "fixed_kelvin": 2000}
+    )
+    assert result["type"] == "abort", result
+    await hass.async_block_till_done()
+    assert entity_ids(hass, entry)["Fixed white"] == light
+    assert hass.states.get(light).attributes["supported_color_modes"] == ["brightness"]
+    assert not source.calls
+    await command(hass, light, brightness=80)
+    assert source.calls[-1][1] == {"brightness": 80, "color_temp_kelvin": 2000}
+    await hass.config_entries.async_unload(entry.entry_id)
+
+
 async def test_bad_sources_rejected(hass, source, setup_transform):
     hass.states.async_set(
         "light.aggregate",

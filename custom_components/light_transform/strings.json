@@ -31,7 +31,7 @@
     "step": {
       "user": {
         "title": "Create a channel controller",
-        "description": "Select the physical light, then add output subentries from this integration's page. This integration owns the whole source: unused RGB channels are switched off on every command. RGB transport also accepts HS/XY sources, but color conversion may mix channels; test the wiring before relying on isolation. Select CCT for a fixed-temperature dimmer. Do not select a group, mask, or transformed light.",
+        "description": "Select the physical light, then add output subentries from this integration's page. This integration owns the whole source: unused RGB channels are switched off on every command. RGB transport also accepts HS/XY sources, but color conversion may mix channels; test the wiring before relying on isolation. Select CCT for native tunable white or a fixed-temperature dimmer. Do not select a group, mask, or transformed light.",
         "data": {
           "name": "Controller name",
           "source": "Source light",
@@ -58,7 +58,7 @@
       "step": {
         "user": {
           "title": "Add output on {transport}",
-          "description": "For an RGB dimmer, select one or more channels (driven equally). For CCT, choose different warm/cold channels and their physical strip temperatures; dimmer channels are ignored. Constant sum limits the combined drive to the requested brightness. Constant max can double combined drive at the midpoint; use only with adequate controller, strip and power-supply ratings. A CCT source supports one fixed-temperature dimmer.",
+          "description": "With RGB transport, select dimmer channels (driven equally), or different warm/cold channels and physical strip temperatures for CCT. Constant sum limits combined drive; constant max can double it at the midpoint and requires adequate hardware ratings. With native CCT transport, choose one fixed-temperature dimmer or tunable-white output. Native tunable white uses the source's advertised temperature range, ignores fixed temperature, and hides RGB controls and effects.",
           "data": {
             "name": "Output name",
             "kind": "Output capability",

@@ -84,7 +84,9 @@ class TransformedLight(LightEntity):
         return {
             "source_entity": self.controller.source,
             "transform": self.output.kind,
-            "channels": sorted(self.output.owned_channels),
+            "channels": (
+                sorted(self.output.owned_channels) if self.controller.transport == "rgb" else []
+            ),
             "approximate_channel_control": self.controller.approximate,
             "delivery_status": self.controller.status,
         }

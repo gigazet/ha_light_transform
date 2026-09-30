@@ -1,6 +1,6 @@
 [project]
 name = "ha-light-transform"
-version = "0.1.0"
+version = "0.2.0"
 description = "Configurable electrical-channel facades for Home Assistant lights"
 requires-python = ">=3.14.2"
 

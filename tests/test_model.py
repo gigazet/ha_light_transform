@@ -75,7 +75,12 @@ def test_disjoint_cct_and_dimmer():
             "overlapping_channels",
         ),
         ([Output("a", "D", "dimmer"), Output("b", "D", "dimmer")], "cct", "overlapping_channels"),
-        ([Output("a", "CCT", "cct")], "cct", "invalid_kind"),
+        ([Output("a", "CCT", "invalid")], "cct", "invalid_kind"),
+        (
+            [Output("a", "CCT", "cct", min_kelvin=6500, max_kelvin=2000)],
+            "cct",
+            "invalid_temperature",
+        ),
         ([Output("a", "D", "dimmer", fixed_kelvin=0)], "cct", "invalid_temperature"),
     ],
 )

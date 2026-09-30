@@ -58,5 +58,8 @@ def validate_mapping(state: State, outputs: list[Output], transport: str) -> Non
         maximum = state.attributes.get("max_color_temp_kelvin")
         if minimum is None or maximum is None:
             raise ValueError("unsupported_source")
-        if any(not minimum <= output.fixed_kelvin <= maximum for output in outputs):
+        if any(
+            not minimum <= output.temperature_range[0] <= output.temperature_range[1] <= maximum
+            for output in outputs
+        ):
             raise ValueError("temperature_out_of_range")

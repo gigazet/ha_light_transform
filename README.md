@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="custom_components/light_transform/brand/logo.png" alt="Light Transform: RGB channels become the right light" width="768">
+  <img src="https://raw.githubusercontent.com/gigazet/ha_light_transform/main/custom_components/light_transform/brand/logo.png" alt="Light Transform: RGB channels become the right light" width="768">
 </p>
 
 # Light Transform
@@ -33,19 +33,55 @@ RGBW/RGBWW-only sources are not supported in this version.
 
 ## Install and configure
 
+### Install through HACS (recommended)
+
+Requires Home Assistant **2026.9.3 or newer** and a working
+[HACS installation](https://www.hacs.xyz/docs/use/download/download/).
+Light Transform is available as a **custom repository**, not in the default HACS
+catalog.
+
+[![Open Light Transform in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=gigazet&repository=ha_light_transform&category=integration)
+
+Use the button above to open the repository in your Home Assistant instance and
+confirm adding it, or add it manually:
+
+1. Open **HACS** in the Home Assistant sidebar.
+2. Open the **three-dot menu** in the upper-right corner and select
+   **Custom repositories**.
+3. Enter `https://github.com/gigazet/ha_light_transform`, select type
+   **Integration**, and click **Add**.
+4. Close the dialog, search for **Light Transform**, and open its repository page.
+5. Click **Download**, review the version offered, and confirm. When there is no
+   tagged release, HACS installs the default branch; a short commit ID as the
+   version is normal.
+6. **Restart Home Assistant** after the download. Reloading the browser or YAML
+   alone does not load a newly installed custom integration.
+7. Continue with **Configure Light Transform** below. Downloading through HACS
+   installs the files; it does not create a controller or transformed lights.
+
+For updates, open Light Transform in HACS, install the offered update, then
+restart Home Assistant. If an expected update is missing, use the repository's
+three-dot menu > **Update information**, then check again.
+
+### Manual installation
+
 1. Copy the `light_transform` directory inside this project's `custom_components`
    into the Home Assistant configuration's `custom_components` directory.
-2. Restart Home Assistant, then open **Settings > Devices & services > Add
+2. Restart Home Assistant, then follow the configuration steps below.
+
+### Configure Light Transform
+
+1. Open **Settings > Devices & services > Add
    integration > Light Transform**.
-3. Name the controller, choose its physical `light.*`, and select **RGB channels**
+2. Name the controller, choose its physical `light.*`, and select **RGB channels**
    (`rgb`) or **Color temperature** (`cct`) transport. Use `rgb` for RGB/HS/XY channel mapping, even if the source also
    advertises color temperature.
-4. On the integration page, choose **Add transformed output**. Each output is a
+3. On the integration page, choose **Add transformed output**. Each output is a
    native config subentry with its own device and stable light entity.
-5. Choose **Dimmer** (`dimmer`) or **Tunable white** (`cct`). Dimmer uses only **Dimmer channels**; CCT uses only
+4. Choose **Dimmer** (`dimmer`) or **Tunable white** (`cct`). Dimmer uses only **Dimmer channels**; CCT uses only
    **Warm channel**, **Cold channel**, the Kelvin endpoints and mixing rule.
    With `cct` transport, only the name and fixed source temperature are needed.
-6. Use the generated entity in dashboards, automations, scenes and light groups.
+5. Use the generated entity in dashboards, automations, scenes and light groups.
    Edit or delete individual outputs using their subentry menu.
 
 The first setup creates a controller **without outputs**. It does not change the
@@ -54,12 +90,27 @@ hardware commands. Switch the source off before changing wiring or channel
 assignments. Deleting an output does not turn its connected strip off; the next
 command to a remaining output clears unassigned RGB channels.
 
-### Install through HACS
+### Missing integration or artwork
 
-In HACS, open **Custom repositories**, add
-`https://github.com/gigazet/ha_light_transform` with type **Integration**, then
-download **Light Transform** and restart Home Assistant. Continue from step 2
-above. This is a custom repository, not a listing in the default HACS catalog.
+If Light Transform does not appear under **Add integration**, first restart
+Home Assistant after downloading, then refresh the browser. Check the Home
+Assistant logs if it is still missing.
+
+The **README banner** and the **integration icon** use different paths:
+
+- The banner uses a public, absolute image URL so it works in GitHub and HACS.
+  Relative HTML `img` paths are not rewritten by the HACS README renderer.
+- Integration icons and logos are bundled in
+  `custom_components/light_transform/brand`. Home Assistant 2026.3+ supports
+  local brand assets; this project's minimum version already includes that
+  support. Finish installation and restart HA before expecting those assets
+  to be available, then hard-refresh the browser.
+
+Some HACS frontend versions use the central Home Assistant brands service for
+their repository-list icons rather than the locally installed brand assets.
+A missing list icon in such a version does not mean the integration or its
+README banner is broken; a README image or `hacs.json` setting cannot change
+that frontend behavior.
 
 Source and documentation: [gigazet/ha_light_transform](https://github.com/gigazet/ha_light_transform).
 Report problems using the [issue tracker](https://github.com/gigazet/ha_light_transform/issues).

@@ -1,0 +1,13 @@
+{
+  "domain": "light_transform",
+  "name": "Light Transform",
+  "codeowners": ["@gigazet"],
+  "config_flow": true,
+  "dependencies": ["light"],
+  "documentation": "https://github.com/gigazet/ha_light_transform",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/gigazet/ha_light_transform/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

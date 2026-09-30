@@ -1,0 +1,108 @@
+{
+  "title": "Light Transform",
+  "selector": {
+    "transport": {
+      "options": {
+        "rgb": "RGB channels (RGB / HS / XY source)",
+        "cct": "Color temperature (CCT source)"
+      }
+    },
+    "kind": {
+      "options": {
+        "dimmer": "Dimmer (brightness only)",
+        "cct": "Tunable white (CCT)"
+      }
+    },
+    "channel": {
+      "options": {
+        "red": "Red (R)",
+        "green": "Green (G)",
+        "blue": "Blue (B)"
+      }
+    },
+    "mixing": {
+      "options": {
+        "constant_sum": "Constant sum (shared drive)",
+        "constant_max": "Constant maximum (higher combined drive)"
+      }
+    }
+  },
+  "config": {
+    "step": {
+      "user": {
+        "title": "Create a channel controller",
+        "description": "Select the physical light, then add output subentries from this integration's page. This integration owns the whole source: unused RGB channels are switched off on every command. RGB transport also accepts HS/XY sources, but color conversion may mix channels; test the wiring before relying on isolation. Select CCT for a fixed-temperature dimmer. Do not select a group, mask, or transformed light.",
+        "data": {
+          "name": "Controller name",
+          "source": "Source light",
+          "transport": "Source transport"
+        }
+      }
+    },
+    "error": {
+      "invalid_source": "Select a physical light, not a group, mask, or transformed output.",
+      "source_unavailable": "The source must be available during setup.",
+      "unsupported_source": "The source does not advertise the selected transport.",
+      "already_configured": "This source already has a Light Transform controller."
+    },
+    "abort": {
+      "already_configured": "This source already has a Light Transform controller."
+    }
+  },
+  "config_subentries": {
+    "output": {
+      "initiate_flow": {
+        "user": "Add transformed output",
+        "reconfigure": "Edit transformed output"
+      },
+      "step": {
+        "user": {
+          "title": "Add output on {transport}",
+          "description": "For an RGB dimmer, select one or more channels (driven equally). For CCT, choose different warm/cold channels and their physical strip temperatures; dimmer channels are ignored. Constant sum limits the combined drive to the requested brightness. Constant max can double combined drive at the midpoint; use only with adequate controller, strip and power-supply ratings. A CCT source supports one fixed-temperature dimmer.",
+          "data": {
+            "name": "Output name",
+            "kind": "Output capability",
+            "channels": "Dimmer channels (dimmer only)",
+            "warm_channel": "Warm channel (CCT only)",
+            "cold_channel": "Cold channel (CCT only)",
+            "min_kelvin": "Warm endpoint (K, CCT only)",
+            "max_kelvin": "Cold endpoint (K, CCT only)",
+            "mixing": "Mixing rule (CCT only)",
+            "fixed_kelvin": "Fixed source temperature (K)"
+          }
+        },
+        "reconfigure": {
+          "title": "Edit output on {transport}",
+          "description": "Changes preserve the entity identity and do not send a command. Switch the source off before changing wiring or channel assignments. Only fields for the selected output capability are used.",
+          "data": {
+            "name": "Output name",
+            "kind": "Output capability",
+            "channels": "Dimmer channels (dimmer only)",
+            "warm_channel": "Warm channel (CCT only)",
+            "cold_channel": "Cold channel (CCT only)",
+            "min_kelvin": "Warm endpoint (K, CCT only)",
+            "max_kelvin": "Cold endpoint (K, CCT only)",
+            "mixing": "Mixing rule (CCT only)",
+            "fixed_kelvin": "Fixed source temperature (K)"
+          }
+        }
+      },
+      "error": {
+        "invalid_source": "The source is not a supported physical light.",
+        "source_unavailable": "The source must be available to configure an output.",
+        "source_removed": "The registered source was removed. Recreate the controller for its replacement.",
+        "unsupported_source": "The source no longer supports the configured transport.",
+        "already_configured": "Another controller already owns this source.",
+        "invalid_kind": "This output capability is not supported by this transport.",
+        "invalid_channels": "Choose valid channels; warm and cold channels must be different.",
+        "overlapping_channels": "Each channel may belong to only one output. CCT sources support only one output.",
+        "invalid_temperature": "The warm endpoint must be lower than the cold endpoint.",
+        "temperature_out_of_range": "The fixed temperature must be inside the source's advertised range.",
+        "invalid_mixing": "Choose constant_sum or constant_max."
+      },
+      "abort": {
+        "reconfigure_successful": "Output updated."
+      }
+    }
+  }
+}
